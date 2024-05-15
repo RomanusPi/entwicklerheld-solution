@@ -1,0 +1,82 @@
+
+def check_mappings(graph1, graph2, mapping):
+    if len(mapping) == len(graph1['nodes']):
+        return check_adjacency(graph1,graph2,mapping)
+    for node2 in graph2['nodes']:
+        if node2['id'] not in mapping.values():
+            for node1 in graph1['nodes']:
+                if node1['id'] not in mapping:
+                    mapping[node1['id']] = node2['id']
+                    if check_mappings(graph1, graph2, mapping):
+                        return True
+                    del mapping[node1['id']]
+    return False
+ 
+
+def check_adjacency (graph1, graph2, mapping) :
+    for node1 in graph1['nodes']:
+        for neighbor1 in node1['neighbors']:
+            neighbor2 = mapping.get(neighbor1)
+            if neighbor2 is None or neighbor2 not in mapping.values() or neighbor2 not in graph2['nodes'][int(mapping[node1['id']]) - 1]['neighbors']:
+                return False
+    return True
+
+
+def format_graph(graph:dict):
+    # Convert letter IDs to corresponding numbers
+    letter_to_number = {chr(i + ord('A')): i + 1 for i in range(26)}
+    numbers=["1","2","3","4","5","6","7","8","9","0"]
+    for node in graph["nodes"]:
+        if  node["id"] in numbers: continue
+        node["id"] = str(letter_to_number[node["id"]])
+        node["neighbors"] =  [str(letter_to_number[neighbor]) if not neighbor in numbers else neighbor for neighbor in node["neighbors"]]
+
+    return graph
+
+def is_homomorphic(graph1, graph2):
+    # scenario 1
+       
+    mapping = {} 
+    #format graph to the same signs 
+    graph1=format_graph( graph1 ) 
+    graph2=format_graph( graph2 )
+
+    result = check_mappings ( graph1, graph2, mapping)
+    
+    return {"mapping": mapping if result else None, "result": result}
+
+
+def is_isomorphic(graph1, graph2):
+    # scenario 2
+    mapping1 = None
+    mapping2 = None   
+    is_isomorphism=False
+      
+    if len(graph1['nodes']) > len(graph2['nodes']):
+        return {"mapping": None, "result": False}
+    #check homomorphism Graph1 to Graph2 and Graph2 to Graph1
+    result1 = is_homomorphic(graph1, graph2)
+    result2 = is_homomorphic(graph2, graph1)
+
+    
+    # Obtain the mapping and result from the returned dictionary
+    if result1['result']: 
+        mapping1 = [int(node_id) - 1 for node_id in result1['mapping'].keys() ]
+    else: mapping1 = None
+    if result1['result']: 
+        mapping2 = [int(node_id) - 1 for node_id in result2['mapping'].keys() ]
+    else: mapping2 = None
+    
+    #check isomorphism If both homomorphisms exist, then the graphs are isomorphic
+    if result1["result"] and result2["result"]:
+        is_isomorphism = True
+    else: 
+        is_isomorphism = False    
+  
+    return {
+        "mapping1": mapping1,
+        "mapping2": mapping2,
+        "is_homomorphic1": result1["result"],
+        "is_homomorphic2": result2['result'] ,
+        "is_isomorphic": is_isomorphism
+    }
